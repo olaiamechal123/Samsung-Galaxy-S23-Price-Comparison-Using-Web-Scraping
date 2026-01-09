@@ -1,0 +1,59 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
+import pandas as pd
+from datetime import datetime
+import time
+
+# Configurer Selenium (navigateur Chrome)
+options = webdriver.ChromeOptions()
+options.add_argument("--headless")  # Exécuter sans ouvrir de fenêtre
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+# URL du produit (remplacez par l'URL réelle)
+url = "https://www.amazon.com/SAMSUNG-International-Unlocked-Verizon-T-Mobile/dp/B0BQ4YCB92/ref=sr_1_1?crid=26NDB9G22CVQ&dib=eyJ2IjoiMSJ9.dqi5BjoslCEv4NwdjthbDHkmKxRQdm5x3-5TyQz8L3GipjZUJAlul-TujXCIPBDsdtHU7h1KHcDWZp_N1_4XxOBpe9wtpgQeSIU01LC_ajKFm1qZLGgyzfIbPEG7PptmOS4qLhfkSSM5AJHIhlHnzyiI4oMgWqeBbv6jXygFp1M8wluqYofkArcUtJw3OayHNibCL18kUd8Eqq3ELjD65syrSOQILR6o16ddRXxH5kM.O2-lsdesrMsPocgg6AAeekfrV_C11rqxdg7PBOIkUXk&dib_tag=se&keywords=Samsung+Galaxy+S23&qid=1761232020&refinements=p_123%3A46655&rnid=85457740011&sprefix=samsung+galaxy+s23+%2Caps%2C402&sr=8-1"
+
+try:
+    # Accéder à la page
+    print("Chargement de la page Amazon...")
+    driver.get(url)
+    time.sleep(3)  # Attendre 3 secondes pour le chargement
+
+    # Analyser le HTML
+    print("Analyse du HTML...")
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+
+    # Extraire le nom du produit
+    nom_produit = soup.find('span', id='productTitle')
+    nom_produit = nom_produit.text.strip() if nom_produit else "Nom non trouvé"
+    print(f"Produit : {nom_produit}")
+
+    # Extraire le prix
+    prix_element = soup.find('span', class_='aok-offscreen')
+    prix = prix_element.text.strip() if prix_element else "Prix non trouvé"
+    print(f"Prix : {prix}")
+
+    
+
+    # Sauvegarder dans un fichier CSV
+    print("Sauvegarde des données...")
+    data = {
+        'Produit': [nom_produit],
+        'Prix': [prix],
+        'Date': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+        'Site': ['Amazon']
+    }
+    df = pd.DataFrame(data)
+    df.to_csv('prix_samsung_galaxy_s23.csv', mode='a', index=False, header=not pd.io.common.file_exists('prix_samsung_galaxy_s23.csv'))
+    print("Données sauvegardées dans prix_samsung_galaxy_s23.csv")
+
+except Exception as e:
+    print(f"Erreur : {e}")
+
+finally:
+    # Fermer le navigateur
+    driver.quit()
+    print("Navigateur fermé.")
